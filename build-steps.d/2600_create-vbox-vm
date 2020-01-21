@@ -122,9 +122,22 @@ general_setup() {
    ## Disable microphones.
    ## https://www.whonix.org/wiki/Hardware_Threat_Minimization#Microphones
    sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --audioin off
+
+   ## Quote https://www.virtualbox.org/manual/ch03.html
+   ## > "VMSVGA: Use this graphics controller to emulate a VMware SVGA graphics device."
+   ## > "This is the default graphics controller for Linux guests."
+   ##
+   ## Has better desktop resolution in CLI (virtual terminal) mode.
+   ##
+   ## Broken for some users.
+   ## https://forums.whonix.org/t/black-screen-on-15-0-0-6-6-and-15-0-0-7-1/8554
+   #sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --graphicscontroller vmsvga
 }
 
 spectre_meltdown_defenses() {
+   ## This code is currently not in use! Reasons:
+   ## https://www.whonix.org/wiki/Spectre_Meltdown#VirtualBox
+
    ## https://www.virtualbox.org/manual/ch08.html
    ## > "--ibpb-on-vm-[enter|exit] on|off: Enables flushing of the indirect branch prediction buffers on every VM enter or exit respectively. This could be enabled by users overly worried about possible spectre attacks by the VM. Please note that these options may have sever impact on performance."
    ##
@@ -217,19 +230,6 @@ whonix-gateway_specific() {
 
    sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --cableconnected1 on
 
-   ## Prevents leaking DNS info from the host into the guest.
-   ## Also useful in other cases.
-   ## https://www.virtualbox.org/manual/ch09.html#nat-adv-dns
-   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnsproxy1 on
-
-   ## Prevents leaking DNS info from the host into the guest.
-   ## Also useful in other cases.
-   ## https://www.virtualbox.org/manual/ch09.html#nat_host_resolver_proxy
-   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnshostresolver1 on
-
-   ## Do not pass the domain name for network name resolution to the VM.
-   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnspassdomain1 off
-
    ## Enable Adapter 2, set to "Internal Network".
    sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --nic2 intnet
 
@@ -247,7 +247,21 @@ whonix-workstation_specific() {
 
    ## Change the internal network to "Whonix", IMPORTANT!
    sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --intnet1 "Whonix"
+}
 
+whonix-custom-workstation_specific() {
+   whonix-workstation_specific
+
+   sudo $SUDO_OPTS VBoxManage setextradata "$VMNAME" "GUI/FirstRun" "yes"
+}
+
+debian_specific() {
+   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --nic1 nat
+
+   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --cableconnected1 on
+}
+
+audio_enable() {
    ## Enable audio controller ac97.
    ## sb16 should be obsolete.
    ## ac97 is hopefully better supported than intel hda.
@@ -263,14 +277,29 @@ whonix-workstation_specific() {
    sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --audioout on
 }
 
-whonix-custom-workstation_specific() {
-   whonix-workstation_specific
+dns_specific() {
+   ## https://serverfault.com/questions/453185/vagrant-virtualbox-dns-10-0-2-3-not-working
 
-   sudo $SUDO_OPTS VBoxManage setextradata "$VMNAME" "GUI/FirstRun" "yes"
-}
+   ## Prevents leaking DNS info from the host into the guest.
+   ## Also useful in other cases.
+   ## https://www.virtualbox.org/manual/ch09.html#nat-adv-dns
+   ##
+   ## '--natdnsproxy1 on' might cause issues:
+   ## https://forums.virtualbox.org/viewtopic.php?f=6&t=94671&p=457620#p457620
+   ##
+   ## Probably not both required 'natdnsproxy1 on' and 'natdnshostresolver1 on'.
+   ##
+   ## Both enabled at the same time causes an error in VirtualBox VM log:
+   ## 00:00:00.933430 NAT: Host Resolver conflicts with DNS proxy, the last one was forcely ignored
+   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnsproxy1 off
 
-debian_specific() {
-   true
+   ## Prevents leaking DNS info from the host into the guest.
+   ## Also useful in other cases.
+   ## https://www.virtualbox.org/manual/ch09.html#nat_host_resolver_proxy
+   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnshostresolver1 on
+
+   ## Do not pass the domain name for network name resolution to the VM.
+   sudo $SUDO_OPTS VBoxManage modifyvm "$VMNAME" --natdnspassdomain1 off
 }
 
 main() {
@@ -300,14 +329,21 @@ main() {
 
    if [ "$WHONIX_BUILD_TYPE" = "gateway" ]; then
       whonix-gateway_specific
+      dns_specific
    elif [ "$WHONIX_BUILD_TYPE" = "workstation" ]; then
       whonix-workstation_specific
+      audio_enable
    elif [ "$WHONIX_BUILD_TYPE" = "custom-workstation" ]; then
       whonix-custom-workstation_specific
-   elif [ "$WHONIX_BUILD_TYPE" = "debian-vm" ]; then
+      audio_enable
+   elif [ "$WHONIX_BUILD_TYPE" = "whonix-host" ]; then
       debian_specific
-   elif [ "$WHONIX_BUILD_TYPE" = "hardened-debian" ]; then
+      dns_specific
+      audio_enable
+   elif [ "$WHONIX_BUILD_TYPE" = "kicksecure" ]; then
       debian_specific
+      dns_specific
+      audio_enable
    else
       error "ERROR: Invalid WHONIX_BUILD_FLAVOR $WHONIX_BUILD_FLAVOR. Please report this bug!"
    fi

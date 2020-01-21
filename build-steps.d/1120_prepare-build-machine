@@ -1,0 +1,270 @@
+#!/bin/bash
+
+## Copyright (C) 2012 - 2018 ENCRYPTED SUPPORT LP <adrelanos@riseup.net>
+## See the file COPYING for copying conditions.
+
+set -x
+set -e
+
+true "INFO: Currently running script: $BASH_SOURCE $@"
+
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd "$MYDIR"
+cd ..
+cd help-steps
+
+## TODO
+#VMNAME="internalrun"
+
+source pre
+source colors
+source variables
+
+cd "$MYDIR"
+cd ..
+
+build_machine_setup() {
+   ## If whonix_build is run with --fast1 switch.
+   if [ "$WHONIX_BUILD_FAST1" = "1" ]; then
+      true "${bold}${cyan}INFO: run with --fast 1 switch, skipping $BASH_SOURCE. ${reset}"
+      exit 0
+   fi
+
+   ## Debugging.
+   true "${bold}${cyan}INFO: PWD: $PWD ${reset}"
+
+   ## {{ Checking if Whonix's source folder has been obtained (git cloned) as user or root.
+
+   stat_output_owner="$(stat -c %U "$BASH_SOURCE")"
+   stat_output_group="$(stat -c %G "$BASH_SOURCE")"
+
+   if [ "$stat_output_owner" = "root" ]; then
+      error "${bold}${red}ERROR $BASH_SOURCE: Is owned by root user! Instructions say you should get Whonix's source code as user, not root! \
+Please delete Whonix's source code folder and get it again as user, not root!${reset}"
+   fi
+
+   if [ "$stat_output_group" = "root" ]; then
+      error "${bold}${red}ERROR $BASH_SOURCE: Is owned by root group! Instructions say you should get Whonix's source code as user, not root! \
+Please delete Whonix's source code folder and get it again as user, not root!${reset}"
+   fi
+
+   ## }}
+
+   ## {{ users and groups
+
+   ## Check if user "$user_name" already exist.
+   local id_exit_code
+   id_exit_code="0"
+   id "$user_name" || { id_exit_code="$?" ; true; };
+   if [ "$id_exit_code" = "1" ]; then
+      true 'INFO: Creating user "$user_name" with password "changeme", because some things have to be run as "$user_name".'
+      if command -v qubesdb-read >/dev/null 2>&1 ; then
+         password=""
+      else
+         ## setting password of user clearnet to changeme
+         ##
+         ## How this password was created:
+         ## sudo apt-get install whois
+         ## mkpasswd
+         ## changeme
+         ## Resulted in: aTayYxVyw5kDo
+         password="aTayYxVyw5kDo"
+      fi
+      useradd --password "$password" --user-group --create-home --shell /bin/bash "$user_name"
+   elif [ "$id_exit_code" = "0" ]; then
+      true "${cyan}INFO: Not creating user \"$user_name\" with password \"changeme\", because it already exists.${reset}"
+   else
+      true "${red}${bold}ERROR: id_exit_code was neither 1 or 0, it was: ${id_exit_code}${reset}"
+      error "See above!"
+   fi
+
+   ## Add user to sudo group.
+   addgroup "$user_name" sudo
+
+   ## }}
+
+   if [ ! "$WHONIX_BUILD_UNATTENDED_PKG_INSTALL" = "1" ]; then
+      ## Always keep old configuration file. Do not prompt to install new config files.
+      local apt_unattended_opts="--option Dpkg::Options=--force-confold"
+   fi
+
+   ## Debugging.
+   true 'INFO: Benchmarking "sudo $SUDO_OPTS echo "This is a test echo." using "time"...'
+   time sudo $SUDO_OPTS echo "This is a test echo."
+
+   true "INFO: Updating git sub modules..."
+
+   sudo $SUDO_OPTS git submodule sync --recursive
+   sudo $SUDO_OPTS git submodule update --init --recursive --jobs=200
+
+   true "INFO: Updated git sub modules."
+
+   ## Run after git submodule fetching, so $apt_get_update_wrapper_source_path_full will be available.
+   $apt_get_update_wrapper_source_path_full \
+      ${APTGETOPT[@]} \
+      -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
+      -o Dir::Etc::sourceparts="-" \
+      update
+
+   if [ ! "$WHONIX_BUILD_UPGRADE_BUILD_MACHINE" = "0" ]; then
+      ## Update package lists and upgrade.
+      apt-get \
+         ${APTGETOPT[@]} \
+         -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
+         -o Dir::Etc::sourceparts="-" \
+         $apt_unattended_opts \
+         --no-install-recommends \
+         --yes \
+            dist-upgrade
+   fi
+
+   ###############################################
+   ## Build Dependencies for Whonix Build Script #
+   ###############################################
+   local packages_to_be_installed
+   packages_to_be_installed+=" $whonix_build_script_build_dependency "
+
+   if [ "$eatmydata_install" = "true" ]; then
+      true "INFO: Installing eatmydata, because using '--unsafe-io true'."
+      packages_to_be_installed+=" $eatmydata "
+   else
+      true "INFO: Not installing eatmydata, because not using '--unsafe-io true'."
+   fi
+
+   if [ "$ANON_BUILD_INSTALL_TO_ROOT" = "1" ]; then
+      ###########################################
+      ## Build Dependency for Bare Metal Builds #
+      ###########################################
+      local bare_metal_basic_package_list
+      bare_metal_basic_package_list="$(grep -vE "^\s*#" "$WHONIX_SOURCE_FOLDER/grml_packages" | tr "\n" " ")"
+      packages_to_be_installed+=" $bare_metal_basic_package_list "
+   else
+      ##################################################################
+      ## Build Dependencies for creating Virtual Machine Images (.raw) #
+      ##################################################################
+      ## for grml-debootstrap
+      packages_to_be_installed+=" grml-debootstrap kpartx mksh parted qemu-utils "
+      ## for converting images (qemu-img)
+      packages_to_be_installed+=" qemu-utils "
+      ## for shrinking images
+      packages_to_be_installed+=" zerofree "
+
+      ##################################################################
+      ## Build Dependencies for Raspberry PI (RPI)                     #
+      ##################################################################
+      ## binfmt-support
+      ## qemu
+      ## qemu-user-static
+      if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-rpi" ]; then
+         packages_to_be_installed+=" binfmt-support "
+         packages_to_be_installed+=" qemu "
+         packages_to_be_installed+=" qemu-user-static "
+      fi
+
+      if [ "$WHONIX_BUILD_VIRTUALBOX" = "true" ]; then
+         #######################################################################
+         ## Build Dependencies for creating VirtualBox Images (.vdi and .ova)  #
+         #######################################################################
+         ## uname -r returns on Qubes:
+         ## 4.4.31-11.pvops.qubes.x86_64
+         local linux_headers
+         if command -v qubesdb-read >/dev/null 2>&1 ; then
+            linux_headers="linux-headers-amd64"
+         else
+            linux_headers="linux-headers-${host_architecture}"
+         fi
+         packages_to_be_installed+=" $linux_headers "
+
+         true "INFO: Checking if VirtualBox is already installed..."
+         if virtualbox_version_installed="$(dpkg-query --show --showformat='${Version}' "virtualbox-qt")" ; then
+            true "INFO: VirtualBox is already installed."
+
+            virtualbox_version_minium="5.2.18"
+
+            true "INFO: Checking if $virtualbox_version_installed is not lower than $virtualbox_version_minium..."
+            if dpkg --compare-versions "$virtualbox_version_installed" lt $virtualbox_version_minium 2>/dev/null ; then
+               true "INFO: Installed VirtualBox version is lower than $virtualbox_version_installed."
+               install_virtualbox="true"
+            else
+               true "INFO: Installed VirtualBox version is recent enough."
+            fi
+         else
+            true "INFO: VirtualBox is not yet installed. Installing..."
+            install_virtualbox="true"
+         fi
+
+         if [ "$install_virtualbox" = "true" ]; then
+            ## Cross builds considerations:
+            ## - virtualbox-source cannot be installed in Qubes.
+            ## - virtualbox-dkms can be installed in Qubes.
+            packages_to_be_installed+=" virtualbox-source "
+            ## The cli package which provides 'VBoxManage'.
+            packages_to_be_installed+=" virtualbox "
+            ## The gui package which provides 'virtualbox'.
+            ## Not required for build but makes sense to have installed for everyone who wants to run their own builds.
+            packages_to_be_installed+=" virtualbox-qt "
+         fi
+
+      fi
+
+      if [ "$WHONIX_BUILD_ISO" = "true" ]; then
+         ## xorriso
+         packages_to_be_installed+=" xorriso "
+         ## mksquashfs
+         packages_to_be_installed+=" squashfs-tools "
+         ## grub-mkimage
+         packages_to_be_installed+=" grub-common "
+         ## /usr/lib/ISOLINUX/isolinux.bin
+         packages_to_be_installed+=" isolinux "
+         ## /boot/memtest86+.bin
+         packages_to_be_installed+=" memtest86+ "
+         ## grub-mkimage: error: cannot open `/usr/lib/grub/x86_64-efi/moddep.lst': No such file or directory.
+         packages_to_be_installed+=" grub-efi-amd64-bin "
+      fi
+   fi
+
+   apt-get \
+      ${APTGETOPT[@]} \
+      -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
+      -o Dir::Etc::sourceparts="-" \
+      $apt_unattended_opts \
+      --no-install-recommends \
+      --yes \
+      install \
+      $packages_to_be_installed
+
+   if [ "$WHONIX_BUILD_INTERNALRUN" = "1" ]; then
+      true
+   else
+      if [ "$WHONIX_BUILD_VIRTUALBOX" = "true" ]; then
+         ## VirtualBox will be be installed at this point.
+         "$WHONIX_SOURCE_HELP_STEPS_FOLDER/vm-exists-test"
+      fi
+   fi
+
+   ## Debugging.
+   cat /usr/sbin/policy-rc.d || true
+
+   ## Debugging.
+   #cat /proc/devices
+}
+
+genmkfile_installation() {
+   pushd "$WHONIX_SOURCE_FOLDER/packages/genmkfile"
+
+   GENMKFILE_DEBUG="1" make_use_cowbuilder=false "$WHONIX_SOURCE_FOLDER/packages/genmkfile/usr/share/genmkfile/make-helper.bsh" deb-cleanup
+   sudo $SUDO_OPTS GENMKFILE_DEBUG="1" make_use_cowbuilder=false "$WHONIX_SOURCE_FOLDER/packages/genmkfile/usr/share/genmkfile/make-helper.bsh" deb-pkg
+   GENMKFILE_DEBUG="1" make_use_cowbuilder=false "$WHONIX_SOURCE_FOLDER/packages/genmkfile/usr/share/genmkfile/make-helper.bsh" deb-install
+   GENMKFILE_DEBUG="1" make_use_cowbuilder=false "$WHONIX_SOURCE_FOLDER/packages/genmkfile/usr/share/genmkfile/make-helper.bsh" deb-cleanup
+
+   popd
+}
+
+main() {
+   root_check "$@"
+   build_machine_setup "$@"
+   genmkfile_installation "$@"
+}
+
+main "$@"

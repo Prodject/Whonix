@@ -1,0 +1,63 @@
+#!/bin/bash
+
+## Copyright (C) 2019 - 2019 ENCRYPTED SUPPORT LP <adrelanos@riseup.net>
+## See the file COPYING for copying conditions.
+
+set -x
+set -e
+
+true "INFO: Currently running script: $BASH_SOURCE $@"
+
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd "$MYDIR"
+cd ..
+cd help-steps
+
+source pre
+source colors
+source variables
+
+copy-vm-files(){
+   errorhandlersetup "errorhandlerunchrootunpreventunmount" ERR INT TERM
+
+   "$WHONIX_SOURCE_HELP_STEPS_FOLDER/mount-raw"
+
+   ## here we copy the Gateway and Workstation .qcow2 files into the host VM
+   ## previously I ran qemu-img convert -f qcow2 -O qcow2 on the host to reduce their size
+   ## a final, clean build step should also take care of building/extracting/shrinking these files automatically
+   ## of course it would also use variables instead of version numbers
+   ## we also apply correct file permissions
+
+   cp --sparse=always "$copy_vms_into_raw_file_one" "$CHROOT_FOLDER/var/lib/libvirt/images/Whonix-Gateway.qcow2"
+   cp --sparse=always "$copy_vms_into_raw_file_two" "$CHROOT_FOLDER/var/lib/libvirt/images/Whonix-Workstation.qcow2"
+
+   $CHROOT chmod -v -R 444 "/var/lib/libvirt/images/Whonix-Gateway.qcow2"
+   $CHROOT chmod -v -R 444 "/var/lib/libvirt/images/Whonix-Workstation.qcow2"
+   $CHROOT chown -v -R libvirt-qemu:libvirt-qemu "/var/lib/libvirt/images/Whonix-Gateway.qcow2"
+   $CHROOT chown -v -R libvirt-qemu:libvirt-qemu "/var/lib/libvirt/images/Whonix-Workstation.qcow2"
+
+   "$WHONIX_SOURCE_HELP_STEPS_FOLDER/unmount-raw"
+
+   true
+}
+
+main() {
+   errorhandlersetup "errorhandlerunchrootunpreventunmount" ERR INT TERM
+
+   if [ "$WHONIX_BUILD_TYPE" = "kicksecure" ]; then
+      true "INFO: kicksecure does not copy VM images into the build, ok."
+      return 0
+   fi
+
+   if [ "$WHONIX_BUILD_ISO" = "true" ]; then
+      true
+   else
+      true "${green}INFO: Skipping $BASH_SOURCE, because WHONIX_BUILD_ISO is not set to 'true'.${reset}"
+      exit 0
+   fi
+
+   copy-vm-files
+}
+
+main "$@"

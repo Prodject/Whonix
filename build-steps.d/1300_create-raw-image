@@ -101,9 +101,34 @@ create-debian-raw-image() {
    ## Do not use /etc/network/interfaces by grml-debootstrap.
    [ -n "$NOINTERFACES" ] || export NOINTERFACES="true"
 
-   [ -n "$DEBOOTSTRAP" ] || export DEBOOTSTRAP="$WHONIX_SOURCE_FOLDER/help-steps/pbuilder-debootstrap-command-filter"
-   ## Works probably only with mmdebstrap.
-   [ -n "$MIRROR" ] || export MIRROR="$whonix_build_sources_list_primary"
+   mmdebstrap_wrapper="$WHONIX_SOURCE_FOLDER/help-steps/pbuilder-debootstrap-command-filter"
+
+   if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-rpi" ]; then
+      ## We assume cross building on "amd64" (Intel and AMD) for "arm64" for RPi builds.
+      ## It would be safer to build on "arm64" because then it may be possible
+      ## to use mmdebstrap, which is more secure (and faster).
+      [ -n "$DEBOOTSTRAP" ] || export DEBOOTSTRAP='qemu-debootstrap'
+      [ -n "$GRUB_INSTALL" ] || export GRUB_INSTALL='no'
+   else
+      [ -n "$DEBOOTSTRAP" ] || export DEBOOTSTRAP="$mmdebstrap_wrapper"
+   fi
+
+   if [ "$DEBOOTSTRAP" = "$mmdebstrap_wrapper" ]; then
+      ## Using a sources.list probably only with mmdebstrap.
+      [ -n "$MIRROR" ] || export MIRROR="$whonix_build_sources_list_primary"
+   else
+      ## qemu-debootstrap:
+      ## - cannot be combined with mmdebstrap.
+      ## - cannot bootstrap from multiple (regular and security) repositories
+      ##   at the same time.
+      ## - does not support apt sources in a sources.list file such as for example
+      ##   build_sources/debian_stable_current_clearnet.list
+      ##   (variable: whonix_build_sources_list_primary)
+      ##   but requires a apt URI such as for example.
+      ##   http://HTTPS///deb.debian.org/debian
+      ##   (variable: whonix_build_apt_sources_mirror)
+      [ -n "$MIRROR" ] || export MIRROR="$whonix_build_apt_sources_mirror"
+   fi
 
    ## See also /etc/debootstrap/config or
    ## https://github.com/grml/grml-debootstrap/blob/master/config to learn
@@ -114,10 +139,6 @@ create-debian-raw-image() {
    ## avoid grml-debootstrap apt-get installing its default package selection.
    ## (Which contains grml distribution default packages that we don't need in
    ## Whonix.)
-
-   if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-rpi" ]; then
-      whonix_build_grml_bin="$WHONIX_SOURCE_FOLDER/help-steps/grml-debootstrap"
-   fi
 
    ## whonix_build_multiarch_package_item is read by pbuilder-debootstrap-command-filter.
 
@@ -131,7 +152,7 @@ create-debian-raw-image() {
             --filesystem "$whonix_build_file_system" \
             --force \
             --hostname "$whonix_build_hostname" \
-            --password "$whonix_build_os_password" \
+            --nopassword \
             --release "$whonix_build_apt_stable_release" \
             --keep_src_list \
             --verbose \
@@ -145,6 +166,10 @@ create-empty-raw-image() {
    qemu-img create -f raw "$binary_image_raw" "$VMSIZE"
 }
 
+permission-fix-raw-image() {
+   chown "$user_name:$user_name" "$binary_image_raw"
+}
+
 main() {
    root_check
    if [ "$ANON_BUILD_INSTALL_TO_ROOT" = "1" ]; then
@@ -156,14 +181,15 @@ main() {
          create-debian-raw-image
       elif [ "$WHONIX_BUILD_TYPE" = "workstation" ]; then
          create-debian-raw-image
-      elif [ "$WHONIX_BUILD_TYPE" = "debian-vm" ]; then
+      elif [ "$WHONIX_BUILD_TYPE" = "whonix-host" ]; then
          create-debian-raw-image
-      elif [ "$WHONIX_BUILD_TYPE" = "hardened-debian" ]; then
+      elif [ "$WHONIX_BUILD_TYPE" = "kicksecure" ]; then
          create-debian-raw-image
       else
          error "ERROR: Invalid WHONIX_BUILD_FLAVOR $WHONIX_BUILD_FLAVOR (WHONIX_BUILD_TYPE: $WHONIX_BUILD_TYPE). Please report this bug!"
       fi
    fi
+   permission-fix-raw-image
 }
 
 main "$@"

@@ -37,7 +37,9 @@ backup-file-if-exists() {
       ## Otherwise host /etc/resolv.conf ends up inside VM.
       #cp --no-clobber --preserve "$1" "$1.backup"
 
-      sudo $SUDO_OPTS cp --no-clobber --preserve "$1" "$WHONIX_BINARY/system-files-backup/etc/$base_name"
+      ## Not using 'sudo $SUDO_OPTS' since that would fail if file is not accessible by user "user".
+      cp --no-clobber --preserve "$1" "$WHONIX_BINARY/system-files-backup/etc/$base_name"
+      chown "$user_name:$user_name" "$WHONIX_BINARY/system-files-backup/etc/$base_name"
    else
       true "INFO: file $1 does not exist, skipping backup, ok."
    fi
@@ -59,9 +61,15 @@ main() {
       #########
       ## /dev #
       #########
-
-      ## We need /dev for create_swap_file
-      ##  "dd if=/dev/zero of=/swapfile1 bs=1024 count=524288"
+      ## update-grub
+      ## W: Couldn't identify type of root file system for fsck hook
+      ##
+      ## setupcon: None of /etc/default/keyboard, /etc/default/console-setup, /home/user/.console-setup, /home/user/.keyboard exists.
+      ##
+      ## /usr/share/initramfs-tools/hooks/keymap: 35: /usr/share/initramfs-tools/hooks/keymap: cannot open /var/tmp/mkinitramfs_2xz9rK/morefiles: No such file
+      ##
+      ## In past we needed /dev to create a swapfile.
+      ## dd if=/dev/zero of=/swapfile1 bs=1024 count=524288
       mount --bind "/dev" "$CHROOT_FOLDER/dev"
 
       ##########
@@ -84,6 +92,30 @@ main() {
       ## (required by apt-get-wrapper)
       mount --bind "/dev/pts" "$CHROOT_FOLDER/dev/pts"
    fi
+
+   ## {{{
+
+   ## fuse postinst uses udevadm without hardcoding the path fortunately.
+   ## default search path of /sbin/udevadm:
+   ## `which udevadm`
+   ## /sbin/udevadm
+   ##
+   ## Content of the PATH environment variable during fuse postinst:
+   #/usr/sbin:/usr/bin:/sbin:/bin
+
+   mkdir --parents "$CHROOT_FOLDER/usr/bin"
+   ## File needs to exist before we can use mount.
+   touch "$CHROOT_FOLDER/usr/bin/udevadm"
+   ## Workaround to install fuse.
+   ## https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=934457
+   ## Bind mount dummy udevadm to /usr/bin/udevadm in chroot so it will take
+   ## preference over the real /sbin/udevadm.
+   mount --bind "$WHONIX_SOURCE_FOLDER/help-steps/udevadm" "$CHROOT_FOLDER/usr/bin/udevadm"
+
+   ## }}}
+
+   ## Leftover from build process using mmdebstrap.
+   rm --force "$CHROOT_FOLDER/etc/apt/apt.conf.d/99mmdebstrap"
 
    ##########################
    ## /etc/apt/sources.list #
@@ -165,7 +197,7 @@ main() {
          if [ "$is_ok" = "no" ]; then
             true "INFO: Therefore shredding '$CHROOT_FOLDER/$mount_base_file'."
             ## Delete leaked host $mount_base_file (such as perhaps by grml-debootstrap) inside image.
-            shred -u --zero --force --random-source=/dev/random --verbose "$CHROOT_FOLDER/$mount_base_file"
+            shred -u --zero --force --random-source=/dev/random "$CHROOT_FOLDER/$mount_base_file"
          fi
       else
          true "INFO: Host '/$mount_base_file' does not match '$CHROOT_FOLDER/$mount_base_file', ok"

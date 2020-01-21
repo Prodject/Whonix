@@ -5,7 +5,10 @@
 
 ## example usage:
 ## TODO: always check packages/anon-shared-build-apt-sources-tpo/etc/apt/sources.list.d/torproject.list first!
-## sudo -E ./build-steps.d/1200_create-debian-packages --build --allow-untagged true --allow-uncommitted true --internalrun --target root --function get_tpo_packages
+##
+## sudo -E ./build-steps.d/1200_create-debian-packages --build --allow-untagged true --allow-uncommitted true --internalrun --target root --function download_tpo_packages
+##
+## sudo -E ./build-steps.d/1200_create-debian-packages --build --allow-untagged true --allow-uncommitted true --internalrun --target virtualbox --function download_virtualbox_packages
 
 set -x
 set -e
@@ -27,82 +30,76 @@ source variables
 cd "$MYDIR"
 cd ..
 
-get_backports_packages() {
-   true "INFO: no backports packages required, ok."
-   return 0
+download_tpo_packages() {
+   whonix_build_special_packages_chroot_script="$WHONIX_SOURCE_HELP_STEPS_FOLDER/cowbuilder_repo_download_chroot_script"
+   repo_signing_key="$WHONIX_SOURCE_FOLDER/packages/anon-shared-build-apt-sources-tpo/usr/share/anon-shared-build-apt-sources-tpo/tpoarchive-keys.d/torprojectarchive.asc"
+   repo_sources_list="$whonix_build_sources_list_torproject"
+   temp_newer_packages="$WHONIX_BINARY/temp_packages_tpo"
+   export download_source_package="true"
 
-   if [ "$whonix_build_pkg_apparmor_only" = "true" ]; then
-      true "${cyan}$BASH_SOURCE INFO: Skipping $FUNCNAME, because whonix_build_pkg_apparmor_only is set to $whonix_build_pkg_apparmor_only. ${reset}"
-      return 0
-   fi
+   ## Selected packages we want to mirror from deb.torproject.org to Whonix local/remote repository.
+   newer_package_list="tor tor-geoipdb deb.torproject.org-keyring"
 
-   true "${cyan}$BASH_SOURCE INFO: Getting backports packages... ${reset}"
-
-   ## Not using '-t "${whonix_build_apt_stable_release}-backports"' to workaround apt-get bug.
-   local pkg_list bp
-   bp="${whonix_build_apt_stable_release}-backports"
-
-   ## No longer required. Can be removed/replaced if this function ever gets in use again.
-   pkg_list+="spectre-meltdown-checker/$bp "
-
-   rm --recursive --force "$WHONIX_BINARY/$FUNCNAME"
-   sudo $SUDO_OPTS mkdir --parents "$WHONIX_BINARY/$FUNCNAME"
-   pushd "$WHONIX_BINARY/$FUNCNAME"
-
-   ## Workaround apt-get bug that is happening when using '--connection onion'.
-   $apt_get_update_wrapper_source_path_full \
-      ${APTGETOPT[@]} \
-      -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
-      -o Dir::Etc::sourceparts="-" \
-      update
-
-   ## Download backports packages from Debian backports repository.
-
-   ## https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=441178
-   sudo $SUDO_OPTS \
-      apt-get source --yes \
-         ${APTGETOPT[@]} \
-         $apt_unattended_opts \
-         -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
-         -o Dir::Etc::sourceparts="-" \
-         $pkg_list
-
-   sudo $SUDO_OPTS \
-      apt-get download --yes \
-         ${APTGETOPT[@]} \
-         $apt_unattended_opts \
-         -o Dir::Etc::sourcelist="$whonix_build_sources_list_primary" \
-         -o Dir::Etc::sourceparts="-" \
-         $pkg_list
-
-   local file_name package_absolute_path
-
-   for file_name in ./*.deb ; do
-      package_absolute_path="$(readlink -f "$file_name")"
-      sudo $SUDO_OPTS -E "$whonix_dev_meta_files_folder/debug-steps/reprepro-wrapper" includedeb "$WHONIX_BUILD_APT_CODENAME" "$package_absolute_path"
-   done
-
-   for file_name in ./*.dsc ; do
-      package_absolute_path="$(readlink -f "$file_name")"
-      sudo $SUDO_OPTS -E "$whonix_dev_meta_files_folder/debug-steps/reprepro-wrapper" includedsc "$WHONIX_BUILD_APT_CODENAME" "$package_absolute_path"
-   done
-
-   popd
-
-   true "${cyan}$BASH_SOURCE INFO: Got $FUNCNAME. ${reset}"
+   get_newer_packages "$@"
 }
 
-get_tpo_packages() {
+download_virtualbox_packages() {
+   if [ ! "$WHONIX_BUILD_VIRTUALBOX" = "true" ]; then
+      true "${green}INFO: Skipping $FUNCNAME, because WHONIX_BUILD_VIRTUALBOX is not set to 'true'.${reset}"
+      return 0
+   fi
+
+   whonix_build_special_packages_chroot_script="$WHONIX_SOURCE_HELP_STEPS_FOLDER/cowbuilder_repo_download_chroot_script"
+   repo_signing_key="$WHONIX_SOURCE_FOLDER/build_sources/lucas_nussbaum.asc"
+   repo_sources_list="$WHONIX_SOURCE_FOLDER/build_sources/debian_buster_backport_virtualbox_lucas_nussbaum.list"
+   temp_newer_packages="$WHONIX_BINARY/temp_packages_virtualbox"
+   ## Not available from that repository but from Debian directly.
+   export download_source_package="false"
+
+   ## Selected packages we want to mirror from repo_sources_list to Whonix local/remote repository.
+   newer_package_list="virtualbox virtualbox-dkms virtualbox-guest-dkms virtualbox-guest-source virtualbox-guest-utils virtualbox-guest-x11 virtualbox-qt virtualbox-source"
+
+   ## non-essential and not available packages from the repository we are using:
+   ## virtualbox-ext-pack
+   ## virtualbox-guest-additions-iso
+
+   get_newer_packages "$@"
+}
+
+## Not in use by default.
+## https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=942873
+## https://salsa.debian.org/fasttrack-team/support/issues/10
+compile_virtualbox_packages() {
+   if [ ! "$WHONIX_BUILD_VIRTUALBOX" = "true" ]; then
+      true "${green}INFO: Skipping $FUNCNAME, because WHONIX_BUILD_VIRTUALBOX is not set to 'true'.${reset}"
+      return 0
+   fi
+
+   whonix_build_special_packages_chroot_script="$WHONIX_SOURCE_HELP_STEPS_FOLDER/cowbuilder_build_virtualbox_chroot_script"
+   repo_signing_key="none"
+   repo_sources_list="$whonix_build_sources_list_debian_sid"
+   temp_newer_packages="$WHONIX_BINARY/temp_packages_virtualbox"
+   ## Doing this anyway.
+   #export download_source_package="false"
+
+   ## Selected packages we want to mirror from repo_sources_list to Whonix local/remote repository.
+   newer_package_list="virtualbox virtualbox-dkms virtualbox-guest-dkms virtualbox-guest-source virtualbox-guest-utils virtualbox-guest-x11 virtualbox-qt virtualbox-source"
+
+   ## non-essential and not available packages from the repository we are using:
+   ## virtualbox-ext-pack
+   ## virtualbox-guest-additions-iso
+
+   get_newer_packages "$@"
+}
+
+get_newer_packages() {
    if [ "$whonix_build_pkg_apparmor_only" = "true" ]; then
       true "${cyan}$BASH_SOURCE INFO: Skipping $FUNCNAME, because whonix_build_pkg_apparmor_only is set to $whonix_build_pkg_apparmor_only. ${reset}"
       return 0
    fi
 
-   local temp_tpo_packages="$WHONIX_BINARY/temp_tpo_packages"
-   local whonix_build_tpo_repo_download_chroot_script="$WHONIX_SOURCE_HELP_STEPS_FOLDER/cowbuilder_tpo_repo_download_chroot_script"
-
-   rm --recursive --force "$temp_tpo_packages"
-   sudo $SUDO_OPTS mkdir --parents "$temp_tpo_packages"
+   rm --recursive --force "$temp_newer_packages"
+   sudo $SUDO_OPTS mkdir --parents "$temp_newer_packages"
 
    for whonix_build_multiarch_package_item in $make_cross_build_platform_list ; do
       export whonix_build_multiarch_package_item
@@ -114,20 +111,34 @@ get_tpo_packages() {
       test -d "$base_folder"
       "$WHONIX_SOURCE_HELP_STEPS_FOLDER/umount_kill.sh" "$base_folder/"
 
-      sudo $SUDO_OPTS mkdir -p "$base_folder/tmp/tpo_repo"
+      sudo $SUDO_OPTS mkdir -p "$base_folder/tmp/temporary-repository"
 
-      cp "$WHONIX_SOURCE_FOLDER/packages/anon-shared-build-apt-sources-tpo/usr/share/anon-shared-build-apt-sources-tpo/tpoarchive-keys.d/torprojectarchive.asc" "$base_folder/tmp/tpo_repo/torprojectarchive.asc"
-      cp "$whonix_build_sources_list_torproject" "$base_folder/tmp/tpo_repo/torproject.list"
+      if [ "$repo_signing_key" = "none" ]; then
+         rm -f "$base_folder/tmp/temporary-repository/repo_signing_key.asc"
+      else
+         cp "$repo_signing_key" "$base_folder/tmp/temporary-repository/repo_signing_key.asc"
+      fi
+
+      if [ "$repo_sources_list" = "none" ]; then
+         rm -f "$base_folder/tmp/temporary-repository/newer.list"
+      else
+         cp "$repo_sources_list" "$base_folder/tmp/temporary-repository/newer.list"
+      fi
+
+      cp "$whonix_build_pbuilder_config_file" "$base_folder/tmp/"
 
       cowbuilder_exit_code=0
       $COWBUILDER_PREFIX \
-      apt_get_update_wrapper_bin_path_full=$apt_get_update_wrapper_bin_path_full \
+      newer_package_list="$newer_package_list" \
+      temp_newer_packages="$temp_newer_packages" \
          cowbuilder \
-            --execute "$whonix_build_tpo_repo_download_chroot_script" \
+            --host-arch "$host_architecture" \
+            --architecture "$BUILD_TARGET_ARCH" \
+            --configfile "$whonix_build_pbuilder_config_file" \
+            --execute "$whonix_build_special_packages_chroot_script" \
             --basepath "$base_folder" \
             --buildplace "$cow_folder" \
-            --configfile "$whonix_build_pbuilder_config_file" \
-            --bindmounts "$WHONIX_BINARY/temp_tpo_packages" \
+            --bindmounts "$temp_newer_packages" \
             || { cowbuilder_exit_code="$?" ; true; };
 
       if [ -d "$base_folder" ]; then
@@ -141,17 +152,17 @@ get_tpo_packages() {
 
    local file_name package_absolute_path
 
-   for file_name in "$temp_tpo_packages/"*".deb" ; do
+   for file_name in "$temp_newer_packages/"*".deb" ; do
       package_absolute_path="$(readlink -f "$file_name")"
       sudo $SUDO_OPTS -E "$whonix_dev_meta_files_folder/debug-steps/reprepro-wrapper" includedeb "$WHONIX_BUILD_APT_CODENAME" "$package_absolute_path"
    done
 
-   for file_name in "$temp_tpo_packages/"*".dsc" ; do
+   for file_name in "$temp_newer_packages/"*".dsc" ; do
       package_absolute_path="$(readlink -f "$file_name")"
       sudo $SUDO_OPTS -E "$whonix_dev_meta_files_folder/debug-steps/reprepro-wrapper" includedsc "$WHONIX_BUILD_APT_CODENAME" "$package_absolute_path"
    done
 
-   true "${cyan}$BASH_SOURCE INFO: Got tpo packages. ${reset}"
+   true "${cyan}$BASH_SOURCE INFO: Got newer packages. ${reset}"
 }
 
 create_whonix_debian_packages() {
@@ -191,19 +202,12 @@ create_whonix_debian_packages() {
       fi
       true "${cyan}INFO: Will build now package ($number_folder_current / $number_folders_total): $base_name ${reset}"
       benchmark_time_start="$(date +%s)" || true
-      ## The make_use_lintian is supported by the generic Makefile.
-      #if [ "$base_name" = "qubes-whonix" ]; then
-         #lintian_use_maybe="false"
-      #else
       lintian_use_maybe="$make_use_lintian"
-      #fi
-      local make_file="Makefile"
-      test -f "$make_file"
-      sudo $SUDO_OPTS -E make -f "$make_file" reprepro-remove
       ## Using -E so environment variables make_use_lintian, make_use_cowbuilder, WHONIX_BUILD_APT_CODENAME gets passed.
-      make -f "$make_file" deb-cleanup
-      sudo $SUDO_OPTS -E make -f "$make_file" deb-pkg
-      sudo $SUDO_OPTS -E make -f "$make_file" reprepro-add
+      sudo $SUDO_OPTS -E /usr/share/genmkfile/make-helper.bsh reprepro-remove
+      /usr/share/genmkfile/make-helper.bsh deb-cleanup
+      sudo $SUDO_OPTS -E /usr/share/genmkfile/make-helper.bsh deb-pkg
+      sudo $SUDO_OPTS -E /usr/share/genmkfile/make-helper.bsh reprepro-add
       benchmark_took_time="$(benchmarktimeend "$benchmark_time_start")" || true
       popd
       true "${cyan}INFO: Done with build of package ($number_folder_current / $number_folders_total) (benchmark: $benchmark_took_time): $base_name ${reset}"
@@ -224,12 +228,8 @@ create-debian-packages() {
       return 0
    fi
 
-   source "$WHONIX_SOURCE_HELP_STEPS_FOLDER/git_sanity_test"
-
-   git_sanity_test_main "$@"
-   signing_key "$@"
-   get_backports_packages
-   get_tpo_packages "$@"
+   download_virtualbox_packages "$@"
+   download_tpo_packages "$@"
    create_whonix_debian_packages "$@"
 }
 
@@ -237,6 +237,8 @@ main() {
    root_check "$@"
    if [ "$WHONIX_BUILD_FLAVOR" = "whonix-custom-workstation" ]; then
       true "${cyan}INFO: Skipping creation of packages for custom workstation.${reset}"
+   elif [ "$build_remote_derivative_pkgs" = "true" ]; then
+      true "${cyan}INFO: build_remote_derivative_pkgs is set to $build_remote_derivative_pkgs, skipping creation of packages.${reset}"
    else
       create-debian-packages "$@"
    fi

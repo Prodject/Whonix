@@ -4,7 +4,7 @@
 ## See the file COPYING for copying conditions.
 
 parse_cmd_target_error() {
-   echo "${red}${bold}ERROR: --target must be either virtualbox, qcow2, raw or root and can be used multiple times.${reset}"
+   echo "${red}${bold}ERROR: --target must be either virtualbox, qcow2, iso, raw or root and can be used multiple times.${reset}"
    exit 1
 }
 
@@ -18,11 +18,11 @@ parse_cmd_flavor_error() {
 --flavor whonix-workstation-xfce
 --flavor whonix-workstation-cli
 --flavor whonix-custom-workstation
---flavor debian-vm-kde
---flavor debian-vm-cli
---flavor hardened-debian-kde
---flavor hardened-debian-cli
---flavor hardened-debian-xfce
+--flavor whonix-host-xfce
+--flavor whonix-host-cli
+--flavor kicksecure-kde
+--flavor kicksecure-cli
+--flavor kicksecure-xfce
 ${reset}"
    exit 1
 }
@@ -47,7 +47,7 @@ Build Whonix.
 --clean
 Deletes build products (.raw, .ova and VirtualBox VM's).
 
---flavor whonix-gateway-kde|whonix-gateway-xfce|whonix-gateway-rpi|whonix-gateway-cli|whonix-workstation-kde|whonix-workstation-xfce|whonix-workstation-cli|whonix-custom-workstation|debian-vm-cli|debian-vm-kde|hardened-debian-cli|hardened-debian-kde|hardened-debian-xfce
+--flavor whonix-gateway-kde|whonix-gateway-xfce|whonix-gateway-rpi|whonix-gateway-cli|whonix-workstation-kde|whonix-workstation-xfce|whonix-workstation-cli|whonix-custom-workstation|whonix-host-cli|whonix-host-xfce|kicksecure-cli|kicksecure-kde|kicksecure-xfce
 whonix-gateway-kde: Builds Whonix-Gateway KDE.
 whonix-gateway-xfce: Builds Whonix-Gateway XFCE.
 whonix-gateway-rpi: Builds Whonix-Gateway CLI for the RPi 3.
@@ -56,16 +56,17 @@ whonix-workstation-kde: Builds Whonix-Workstation KDE.
 whonix-workstation-xfce: Builds Whonix-Workstation XFCE.
 whonix-workstation-cli: Builds Whonix-Workstation CLI.
 whonix-custom-workstation: Builds Whonix-Custom-Workstation.
-debian-vm-cli: Builds Debian VM CLI
-debian-vm-kde: Builds Debian VM KDE
-hardened-debian-cli: Builds Hardened Debian CLI
-hardened-debian-kde: Builds Hardened Debian KDE
-hardened-debian-xfce: Builds Hardened Debian XFCE
+whonix-host-cli: Builds Whonix-Host CLI
+whonix-host-xfce: Builds Whonix-Host XFCE
+kicksecure-cli: Builds Kicksecure CLI
+kicksecure-kde: Builds Kicksecure KDE
+kicksecure-xfce: Builds Kicksecure XFCE
 
 --target virtualbox|qcow2|raw|root
 virtualbox: Use this to build VirtualBox .ovas.
 qcow2: Use this to build qcow2 images.
 raw: Use this to build raw images.
+iso: Use this to build iso images.
 root: Use this for Whonix with physical or install to root installations.
 
 vmram, vram, vmsize examples.
@@ -81,6 +82,10 @@ current: Use current sources.
 clearnet: use clearnet apt sources
 onion: use onion apt sources
 
+--repo true|false
+false: Default. Will ${under}not${eunder} enable remote repository.
+true: ${under}enable${eunder} remote repository.
+
 WHONIX_APT_REPOSITORY_OPTS
 Whonix APT Repository.
 Disabled by default.
@@ -89,6 +94,13 @@ WHONIX_APT_REPOSITORY_OPTS='--enable --repository stable'
 WHONIX_APT_REPOSITORY_OPTS='--enable --repository testers'
 WHONIX_APT_REPOSITORY_OPTS='--enable --repository developers'
 WHONIX_APT_REPOSITORY_OPTS='--enable --codename jessie'
+
+--remote-derivative-packages true|false
+false: Default. Will ${under}not${eunder} remote derivative packages.
+true: ${under}use${eunder} remote derivative packages.
+
+--release buster|xenial|bionic
+Unsupported.
 
 --report true|false
 true
@@ -171,6 +183,12 @@ the default package selection as well.
 false: No unsafe io.
 true: Use unsafe io, '-o Dpkg::Options::=--force-unsafe-io', eatmydata and ignore 'sync'.
 Defaults to false.
+
+--freedom false|true
+false: impure build containing nonfreedom software, see https://www.whonix.org/wiki/Dev/nonfree
+true: pure build only containing Freedom Software.
+Default: No default. Required for Whonix-Host builds.
+Not required for Whonix VM builds since always pure build only containing Freedom Software.
 "
 }
 
@@ -217,15 +235,15 @@ whonix_build_one_parse_cmd() {
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
                elif [ "$WHONIX_BUILD_FLAVOR" = "whonix-custom-workstation" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
-               elif [ "$WHONIX_BUILD_FLAVOR" = "debian-vm-cli" ]; then
+               elif [ "$WHONIX_BUILD_FLAVOR" = "whonix-host-cli" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
-               elif [ "$WHONIX_BUILD_FLAVOR" = "debian-vm-kde" ]; then
+               elif [ "$WHONIX_BUILD_FLAVOR" = "whonix-host-xfce" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
-               elif [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-cli" ]; then
+               elif [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-cli" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
-               elif [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-kde" ]; then
+               elif [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-kde" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
-               elif [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-xfce" ]; then
+               elif [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-xfce" ]; then
                   build_machines_counter="$(( $build_machines_counter + 1 ))"
                else
                   parse_cmd_flavor_error
@@ -246,6 +264,9 @@ whonix_build_one_parse_cmd() {
                elif [ "$2" = "raw" ]; then
                   build_target_counter="$(( $build_target_counter + 1 ))"
                   export WHONIX_BUILD_RAW="true"
+               elif [ "$2" = "iso" ]; then
+                  build_target_counter="$(( $build_target_counter + 1 ))"
+                  export WHONIX_BUILD_ISO="true"
                else
                   parse_cmd_target_error
                fi
@@ -330,6 +351,16 @@ whonix_build_one_parse_cmd() {
                fi
                export tb_onion
                export whonix_build_sources_clearnet_or_onion
+               shift 2
+               ;;
+           --release)
+               if [ "$2" = "" ]; then
+                  echo "${red}${bold}ERROR: --release must not be empty.${reset}"
+                  exit 1
+               else
+                  export BUILD_RELEASE="$2"
+                  true "${cyan}BUILD_RELEASE set to $BUILD_RELEASE.${reset}"
+               fi
                shift 2
                ;;
            ## TODO
@@ -418,10 +449,6 @@ whonix_build_one_parse_cmd() {
                ;;
            --hostname)
                export whonix_build_hostname="$2"
-               shift 2
-               ;;
-           --os-password)
-               export whonix_build_os_password="$2"
                shift 2
                ;;
            --debopt)
@@ -543,9 +570,47 @@ whonix_build_one_parse_cmd() {
                export whonix_build_pkg_apparmor_only="true"
                shift
                ;;
-           --redistribute)
-               export whonix_build_redistribute="true"
-               shift
+           --repo)
+               if [ "$2" = "false" ]; then
+                  build_remote_repo_enable="false"
+                  true "${cyan}INFO: will ${under}not${eunder} enable remote repository.${reset}"
+               elif [ "$2" = "true" ]; then
+                  build_remote_repo_enable="true"
+                  true "${cyan}INFO: will ${under}enable${eunder} remote repository.${reset}"
+               else
+                  echo "${red}${bold}ERROR: supported options for --repo are 'true' or 'false'.${reset}"
+                  exit 1
+               fi
+               export build_remote_repo_enable
+               shift 2
+               ;;
+           --remote-derivative-packages)
+               if [ "$2" = "false" ]; then
+                  build_remote_derivative_pkgs="false"
+                  true "${cyan}INFO: will ${under}not${eunder} use remote derivative packages.${reset}"
+               elif [ "$2" = "true" ]; then
+                  build_remote_derivative_pkgs="true"
+                  true "${cyan}INFO: will ${under}use${eunder} remote derivative packages.${reset}"
+               else
+                  echo "${red}${bold}ERROR: supported options for --remote-derivative-packages are 'true' or 'false'.${reset}"
+                  exit 1
+               fi
+               export build_remote_derivative_pkgs
+               shift 2
+               ;;
+           --freedom)
+               if [ "$2" = "false" ]; then
+                  build_freedom_only="false"
+                  true "${cyan}INFO: will include nonfreedom software packages.${reset}"
+               elif [ "$2" = "true" ]; then
+                  build_freedom_only="true"
+                  true "${cyan}INFO: will include Freedom Software packages only.${reset}"
+               else
+                  echo "${red}${bold}ERROR: supported options for --freedom are 'true' or 'false'.${reset}"
+                  exit 1
+               fi
+               export build_freedom_only
+               shift 2
                ;;
            --function)
                if [ "$2" = "" ]; then
@@ -633,6 +698,8 @@ Defaulting whonix_build_sources_clearnet_or_onion to ${under}clearnet${eunder}.
    elif [ "$WHONIX_BUILD_QCOW2" = "true" ]; then
       true
    elif [ "$WHONIX_BUILD_RAW" = "true" ]; then
+      true
+   elif [ "$WHONIX_BUILD_ISO" = "true" ]; then
       true
    else
       if [ "$WHONIX_BUILD_INTERNALRUN" = "1" ]; then

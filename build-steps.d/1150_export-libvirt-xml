@@ -22,16 +22,22 @@ export-libvirt-xml() {
    sudo $SUDO_OPTS mkdir --parents "$WHONIX_BINARY"
 
    sudo $SUDO_OPTS cp "$libvirt_source_kvm_file" "$libvirt_target_kvm_file"
-   sudo $SUDO_OPTS cp "$libvirt_source_network_file_external" "$libvirt_target_network_file_external"
 
-   if [ "$WHONIX_BUILD_TYPE" = "gateway" ]; then
+   if [ "$WHONIX_BUILD_TYPE" = "kicksecure" ]; then
+      true
+   else
+      sudo $SUDO_OPTS cp "$libvirt_source_network_file_external" "$libvirt_target_network_file_external"
       sudo $SUDO_OPTS cp "$libvirt_source_network_file_internal" "$libvirt_target_network_file_internal"
    fi
 }
 
 main() {
    root_check
-   if [ "$WHONIX_BUILD_QCOW2" = "true" ]; then
+   if [ "$WHONIX_BUILD_TYPE" = "whonix-host" ]; then
+      ## There is no such file:
+      ## /home/user/Whonix/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/Whonix-Host.xml
+      true "${green}INFO: Skipping $BASH_SOURCE, because WHONIX_BUILD_TYPE is '$WHONIX_BUILD_TYPE'.${reset}"
+   elif [ "$WHONIX_BUILD_QCOW2" = "true" ]; then
       export-libvirt-xml "$@"
    else
       true "${green}INFO: Skipping $BASH_SOURCE, because WHONIX_BUILD_QCOW2 is not set to 'true'.${reset}"

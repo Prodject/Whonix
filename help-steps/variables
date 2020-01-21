@@ -80,6 +80,7 @@ rm -f "$whonix_aptgetop_file"
 
 aptgetopt_add() {
    APTGETOPT[${#APTGETOPT[@]}]="$1"
+   APTGETOPT_ALT="$APTGETOPT_ALT $1"
 }
 
 aptgetopt_conf_add () {
@@ -105,12 +106,12 @@ echo 'INFO: Setting... export UWT_DEV_PASSTHROUGH="1"'
 [ -n "$UWT_DEV_PASSTHROUGH" ] || UWT_DEV_PASSTHROUGH="1"
 export UWT_DEV_PASSTHROUGH
 
-[ -n "$DEBDEBUG" ] || DEBDEBUG="1"
-export DEBDEBUG
-
 ## used by mmdebstrap
 ## do not export without thinking this through since also used by debhelper
 SOURCE_DATE_EPOCH="$(dpkg-parsechangelog -STimestamp)"
+
+[ -n "$DEBDEBUG" ] || DEBDEBUG="1"
+export DEBDEBUG
 
 [ -n "$tpo_downloader_debug" ] || tpo_downloader_debug="1"
 export tpo_downloader_debug
@@ -142,9 +143,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-kde" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Gateway-KDE"
    [ -n "$VMRAM" ] || VMRAM="768"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-kde"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="gateway"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="KDE"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-kde"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-xfce" ]; then
@@ -152,9 +153,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-xfce" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Gateway-XFCE"
    [ -n "$VMRAM" ] || VMRAM="768"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-xfce"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="gateway"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="XFCE"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-xfce"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-rpi" ]; then
@@ -162,9 +163,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-rpi" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Gateway-RPi"
    [ -n "$VMRAM" ] || VMRAM="768"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="whonix-gateway-rpi"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="gateway"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="RPi"
+   [ -n "$install_package" ] || install_package="whonix-gateway-rpi"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-cli" ]; then
@@ -172,9 +173,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-gateway-cli" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Gateway-CLI"
    [ -n "$VMRAM" ] || VMRAM="512"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-cli"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="gateway"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CLI"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-gateway-cli"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-kde" ]; then
@@ -182,9 +183,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-kde" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Workstation-KDE"
    [ -n "$VMRAM" ] || VMRAM="2048"
    [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-kde"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="workstation"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="KDE"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-kde"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-xfce" ]; then
@@ -192,9 +193,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-xfce" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Workstation-XFCE"
    [ -n "$VMRAM" ] || VMRAM="2048"
    [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-xfce"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="workstation"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="XFCE"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-xfce"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-cli" ]; then
@@ -202,9 +203,9 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-workstation-cli" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Workstation-CLI"
    [ -n "$VMRAM" ] || VMRAM="512"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-cli"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="workstation"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CLI"
+   [ -n "$install_package" ] || install_package="non-qubes-whonix-workstation-cli"
 fi
 
 if [ "$WHONIX_BUILD_FLAVOR" = "whonix-custom-workstation" ]; then
@@ -212,60 +213,89 @@ if [ "$WHONIX_BUILD_FLAVOR" = "whonix-custom-workstation" ]; then
    [ -n "$VMNAME" ] || VMNAME="Whonix-Workstation-CUSTOM"
    [ -n "$VMRAM" ] || VMRAM="2048"
    [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="none"
    [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="custom-workstation"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CUSTOM"
+   [ -n "$install_package" ] || install_package="none"
 fi
 
-if [ "$WHONIX_BUILD_FLAVOR" = "debian-vm-cli" ]; then
-   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Debian-VM"
-   [ -n "$VMNAME" ] || VMNAME="Debian-VM-CLI"
+if [ "$WHONIX_BUILD_FLAVOR" = "whonix-host-cli" ]; then
+   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Whonix-Host"
+   [ -n "$VMNAME" ] || VMNAME="Whonix-Host-CLI"
    [ -n "$VMRAM" ] || VMRAM="512"
    [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="debian-vm-cli"
-   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="debian-vm"
+   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="whonix-host"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CLI"
+   error "${red}${bold}WHONIX_BUILD_FLAVOR $WHONIX_BUILD_FLAVOR is not implemented.${reset}"
 fi
 
-if [ "$WHONIX_BUILD_FLAVOR" = "debian-vm-kde" ]; then
-   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Debian-VM"
-   [ -n "$VMNAME" ] || VMNAME="Debian-VM-KDE"
+if [ "$WHONIX_BUILD_FLAVOR" = "whonix-host-xfce" ]; then
+   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Whonix-Host"
+   [ -n "$VMNAME" ] || VMNAME="Whonix-Host-XFCE"
    [ -n "$VMRAM" ] || VMRAM="2048"
    [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="debian-vm-kde"
-   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="debian-vm"
-   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="KDE"
-fi
-
-if [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-cli" ]; then
-   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Hardened-Debian"
-   [ -n "$VMNAME" ] || VMNAME="Hardened-Debian-CLI"
-   [ -n "$VMRAM" ] || VMRAM="512"
-   [ -n "$VRAM" ] || VRAM="16"
-   [ -n "$install_package" ] || install_package="hardened-debian-cli"
-   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="hardened-debian"
-   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CLI"
-fi
-
-if [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-kde" ]; then
-   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Hardened-Debian"
-   [ -n "$VMNAME" ] || VMNAME="Hardened-Debian-KDE"
-   [ -n "$VMRAM" ] || VMRAM="2048"
-   [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="hardened-debian-kde"
-   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="hardened-debian"
-   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="KDE"
-fi
-
-if [ "$WHONIX_BUILD_FLAVOR" = "hardened-debian-xfce" ]; then
-   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Hardened-Debian"
-   [ -n "$VMNAME" ] || VMNAME="Hardened-Debian-XFCE"
-   [ -n "$VMRAM" ] || VMRAM="2048"
-   [ -n "$VRAM" ] || VRAM="128"
-   [ -n "$install_package" ] || install_package="hardened-debian-xfce"
-   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="hardened-debian"
+   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="whonix-host"
    [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="XFCE"
+
+   if [ "$install_package" = "" ]; then
+      install_package="whonix-host-xfce"
+
+      install_package+="-"
+      if [ "$WHONIX_BUILD_QCOW2" = "true" ]; then
+         install_package+="kvm"
+      elif [ "$WHONIX_BUILD_ISO" = "true" ]; then
+         ## TODO:
+         ## '--flavor whonix-host-xfce --target iso' currently is hardcoded to KVM.
+         install_package+="kvm"
+      else
+         ## This would break:
+         ## sudo ./help-steps/mount-raw --target raw --build --flavor whonix-host-xfce --freedom false
+         #error "${red}${bold}Only 'target --qcow2' is supported for WHONIX_BUILD_FLAVOR $WHONIX_BUILD_FLAVOR for now.${reset}"
+         echo "${red}${bold}NOTE: Only 'target --qcow2' is supported for WHONIX_BUILD_FLAVOR $WHONIX_BUILD_FLAVOR for now.${reset}"
+      fi
+
+      install_package+="-"
+      if [ "$build_freedom_only" = "true" ]; then
+         install_package+="freedom"
+      elif [ "$build_freedom_only" = "false" ]; then
+         install_package+="nonfreedom"
+      else
+         error "${red}${bold}You need to add either '--freedom true' or '--freedom false'!${reset}"
+      fi
+   fi
 fi
+
+if [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-cli" ]; then
+   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Kicksecure"
+   [ -n "$VMNAME" ] || VMNAME="Kicksecure-CLI"
+   [ -n "$VMRAM" ] || VMRAM="512"
+   [ -n "$VRAM" ] || VRAM="16"
+   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="kicksecure"
+   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="CLI"
+   [ -n "$install_package" ] || install_package="kicksecure-cli-vm"
+fi
+
+if [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-kde" ]; then
+   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Kicksecure"
+   [ -n "$VMNAME" ] || VMNAME="Kicksecure-KDE"
+   [ -n "$VMRAM" ] || VMRAM="2048"
+   [ -n "$VRAM" ] || VRAM="128"
+   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="kicksecure"
+   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="KDE"
+   [ -n "$install_package" ] || install_package="kicksecure-kde-vm"
+fi
+
+if [ "$WHONIX_BUILD_FLAVOR" = "kicksecure-xfce" ]; then
+   [ -n "$SHORT_VMNAME" ] || SHORT_VMNAME="Kicksecure"
+   [ -n "$VMNAME" ] || VMNAME="Kicksecure-XFCE"
+   [ -n "$VMRAM" ] || VMRAM="2048"
+   [ -n "$VRAM" ] || VRAM="128"
+   [ -n "$WHONIX_BUILD_TYPE" ] || WHONIX_BUILD_TYPE="kicksecure"
+   [ -n "$WHONIX_BUILD_DESKTOP" ] || WHONIX_BUILD_DESKTOP="XFCE"
+   [ -n "$install_package" ] || install_package="kicksecure-xfce-vm"
+fi
+
+## Read by anon-base-files postinst.
+export WHONIX_BUILD_TYPE
 
 export VMNAME VMRAM VRAM
 
@@ -304,7 +334,7 @@ if [ "$VMNAME" = "unknown" ]; then
    exit 1
 fi
 
-if [ "$VMNAME" = "internal" ]; then
+if [ "$WHONIX_BUILD_INTERNALRUN" = "1" ]; then
    echo "variables INFO: Internal run."
 else
    true "variables INFO: VMNAME is $VMNAME"
@@ -370,9 +400,10 @@ if [ -n "${REPO_PROXY}" ]; then
 
    DEBOOTSTRAP_PREFIX+=" env http_proxy=${REPO_PROXY}"
    COWBUILDER_PREFIX+=" env http_proxy=${REPO_PROXY}"
-   ## Export COWBUILDER_PREFIX so it is available in make-helper.bsh.
-   export COWBUILDER_PREFIX
 fi
+
+## Export COWBUILDER_PREFIX so it is available in make-helper.bsh.
+export COWBUILDER_PREFIX
 
 if [ "$ANON_BUILD_INSTALL_TO_ROOT" = "1" ]; then
    if [ "$CHROOT" = "" ]; then
@@ -412,6 +443,9 @@ export DEB_INSTALL_FOLDER
 export EMPTY_DIR
 
 [ -n "$WHONIX_SOURCES_LIST_TEMP_BUILD_FOLDER" ] || WHONIX_SOURCES_LIST_TEMP_BUILD_FOLDER="/var/lib/whonix/sources_temp_list.d"
+[ -n "$WHONIX_SOURCES_LIST_TEMP_BUILD_FILE" ] || WHONIX_SOURCES_LIST_TEMP_BUILD_FILE="$WHONIX_SOURCES_LIST_TEMP_BUILD_FOLDER/whonix_temp_initialdeb.list"
+
+[ -n "$WHONIX_SOURCES_LIST_TEMP_INITIAL_DEB_SOURCES_LIST" ] || WHONIX_SOURCES_LIST_TEMP_INITIAL_DEB_SOURCES_LIST="$CHROOT_FOLDER/$WHONIX_SOURCES_LIST_TEMP_BUILD_FILE"
 
 ## {{{ whonix_build_on_operating_system
 
@@ -467,7 +501,11 @@ export anon_dist_build_version
 
 ## }}}
 
-[ -n "$whonix_unified_name" ] || whonix_unified_name="Whonix-${WHONIX_BUILD_DESKTOP}-${anon_dist_build_version}"
+if [ "$WHONIX_BUILD_TYPE" = "kicksecure" ]; then
+   [ -n "$whonix_unified_name" ] || whonix_unified_name="Kicksecure-${WHONIX_BUILD_DESKTOP}-${anon_dist_build_version}"
+else
+   [ -n "$whonix_unified_name" ] || whonix_unified_name="Whonix-${WHONIX_BUILD_DESKTOP}-${anon_dist_build_version}"
+fi
 
 [ -n "$binary_image_raw" ] || binary_image_raw="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.raw"
 
@@ -480,14 +518,19 @@ export anon_dist_build_version
 [ -n "$binary_image_ova_torrent" ] || binary_image_ova_torrent="$WHONIX_BINARY/${whonix_unified_name}.ova.torrent"
 [ -n "$binary_image_ova_torrent_signature" ] || binary_image_ova_torrent_signature="$WHONIX_BINARY/${whonix_unified_name}.ova.torrent.asc"
 
+[ -n "$binary_image_iso" ] || binary_image_iso="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.iso"
+[ -n "$binary_image_iso_signature" ] || binary_image_iso_signature="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.iso.asc"
+[ -n "$binary_image_iso_torrent" ] || binary_image_iso_torrent="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.torrent"
+[ -n "$binary_image_iso_torrent_signature" ] || binary_image_iso_torrent_signature="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.torrent.asc"
+
 [ -n "$libvirt_source_kvm_file" ] || libvirt_source_kvm_file="$WHONIX_SOURCE_FOLDER/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/${SHORT_VMNAME}.xml"
-[ -n "$libvirt_target_kvm_file" ] || libvirt_target_kvm_file="$WHONIX_BINARY/${VMNAME}-$anon_dist_build_version.xml"
+[ -n "$libvirt_target_kvm_file" ] || libvirt_target_kvm_file="$WHONIX_BINARY/${VMNAME}-${anon_dist_build_version}.xml"
 
-[ -n "$libvirt_source_network_file_external" ] || libvirt_source_network_file_external="$WHONIX_SOURCE_FOLDER/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/external_network.xml"
-[ -n "$libvirt_target_network_file_external" ] || libvirt_target_network_file_external="$WHONIX_BINARY/Whonix_external_network-$anon_dist_build_version.xml"
+[ -n "$libvirt_source_network_file_external" ] || libvirt_source_network_file_external="$WHONIX_SOURCE_FOLDER/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/Whonix-External.xml"
+[ -n "$libvirt_target_network_file_external" ] || libvirt_target_network_file_external="$WHONIX_BINARY/Whonix_external_network-${anon_dist_build_version}.xml"
 
-[ -n "$libvirt_source_network_file_internal" ] || libvirt_source_network_file_internal="$WHONIX_SOURCE_FOLDER/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/internal_network.xml"
-[ -n "$libvirt_target_network_file_internal" ] || libvirt_target_network_file_internal="$WHONIX_BINARY/Whonix_internal_network-$anon_dist_build_version.xml"
+[ -n "$libvirt_source_network_file_internal" ] || libvirt_source_network_file_internal="$WHONIX_SOURCE_FOLDER/packages/whonix-libvirt/usr/share/whonix-libvirt/xml/Whonix-Internal.xml"
+[ -n "$libvirt_target_network_file_internal" ] || libvirt_target_network_file_internal="$WHONIX_BINARY/Whonix_internal_network-${anon_dist_build_version}.xml"
 
 [ -n "$libvirt_target_xz_archive" ] || libvirt_target_xz_archive="$WHONIX_BINARY/${whonix_unified_name}.libvirt.xz"
 [ -n "$libvirt_target_xz_archive_signature" ] || libvirt_target_xz_archive_signature="$WHONIX_BINARY/${whonix_unified_name}.libvirt.xz.asc"
@@ -499,6 +542,9 @@ export anon_dist_build_version
 
 [ -n "$sha_five_hundredth_twelve_hash_file" ] || sha_five_hundredth_twelve_hash_file="$WHONIX_BINARY/${whonix_unified_name}.sha512sums"
 [ -n "$sha_five_hundredth_twelve_hash_file_signature" ] || sha_five_hundredth_twelve_hash_file_signature="$WHONIX_BINARY/${whonix_unified_name}.sha512sums.asc"
+
+[ -n "$copy_vms_into_raw_file_one" ] || copy_vms_into_raw_file_one="$WHONIX_BINARY/Whonix-Gateway-${anon_dist_build_version}.qcow2"
+[ -n "$copy_vms_into_raw_file_two" ] || copy_vms_into_raw_file_two="$WHONIX_BINARY/Whonix-Workstation-${anon_dist_build_version}.qcow2"
 
 ## {{{ buildconfig.d
 
@@ -544,6 +590,9 @@ export make_use_debsign
 
 [ -n "$gpg_bin" ] || gpg_bin="gpg"
 #[ -n "$gpg_bin" ] || gpg_bin="qubes-gpg-client-wrapper"
+
+[ -n "$signify_private_key" ] || signify_private_key="/home/$user_name/.signify/keyname.sec"
+[ -n "$signify_public_key" ] || signify_public_key="/home/$user_name/.signify/keyname.pub"
 
 ## {{{ fallback variables for debchange (dch), dpkg-buildpackage and debuild
 
@@ -617,16 +666,18 @@ export BUILD_TARGET_ARCH
 
 ## }}}
 
+[ -n "$host_architecture" ] || host_architecture="$(dpkg --print-architecture)"
+export host_architecture
+
 [ -n "$make_cross_build_platform_list" ] || make_cross_build_platform_list="$BUILD_TARGET_ARCH"
 #[ -n "$make_cross_build_platform_list" ] || make_cross_build_platform_list="i386 amd64"
 ## All architectures currently provided by deb.torproject.org at time of writing.
 #[ -n "$make_cross_build_platform_list" ] || make_cross_build_platform_list="armel armhf i386 amd64 arm64"
+export make_cross_build_platform_list
 
 [ -n "$whonix_build_file_system" ] || whonix_build_file_system="ext4"
 
 [ -n "$whonix_build_hostname" ] || whonix_build_hostname="host"
-
-[ -n "$whonix_build_os_password" ] || whonix_build_os_password="changeme"
 
 whonix_build_debopt+=" --verbose "
 
@@ -645,7 +696,13 @@ whonix_build_debopt="${whonix_build_debopt::-1}"
 
 ## cowbuilder (which internally uses pbuilder).
 whonix_build_pbuilder_chroot_script="$WHONIX_SOURCE_HELP_STEPS_FOLDER/pbuilder-chroot-script"
-whonix_build_pbuilder_config_file="$WHONIX_BINARY/pbuilder.conf"
+
+whonix_build_pbuilder_config_name="pbuilder.conf"
+whonix_build_pbuilder_config_file="$WHONIX_BINARY/$whonix_build_pbuilder_config_name"
+export whonix_build_pbuilder_config_name
+## export so it can be read by genmkfile
+export whonix_build_pbuilder_config_file
+
 make_cowbuilder_dist_folder="$WHONIX_BINARY/genmkfile-packages-result"
 
 rm --force "$whonix_build_pbuilder_config_file"
@@ -677,13 +734,19 @@ true \"whonix_aptgetop_file: \$whonix_aptgetop_file\"
 
 APTCACHEHARDLINK=no
 
+## E: Cross building is possible only with the APT dependency resolver
+PBUILDERSATISFYDEPENDSCMD=/usr/lib/pbuilder/pbuilder-satisfydepends-apt
+
 ## End of $whonix_build_pbuilder_config_file.
 " | \
    sudo $SUDO_OPTS tee "$whonix_build_pbuilder_config_file" >/dev/null
 
 #sudo $SUDO_OPTS cat "$whonix_build_pbuilder_config_file"
 
+## Cannot export bash array.
 export APTGETOPT
+
+export APTGETOPT_ALT
 
 ## It depends on the order in which tb-updater is installed if
 ## update-torbrowser should or should not use temporarily reset

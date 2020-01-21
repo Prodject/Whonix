@@ -1,0 +1,84 @@
+#!/bin/bash
+
+## Copyright (C) 2019 - 2019 ENCRYPTED SUPPORT LP <adrelanos@riseup.net>
+## See the file COPYING for copying conditions.
+
+## Not in use by default.
+
+set -x
+
+set -e
+
+test -f "/usr/lib/security-misc/apt-get-wrapper"
+test -f "/tmp/temporary-repository/newer.list"
+test -f "/etc/apt/sources.list"
+
+true "APTGETOPT_ALT: $APTGETOPT_ALT"
+
+if [ "$temp_newer_packages" = "" ]; then
+   echo "ERROR $0: temp_newer_packages is empty!"
+   exit 1
+fi
+
+pushd "$temp_newer_packages"
+
+## Use dpkg multiarch so we can download other architectures than the build host's one using apt-get.
+for architecture in $architecture_list ; do
+   dpkg --add-architecture "$architecture"
+done
+
+/usr/lib/security-misc/apt-get-wrapper \
+   update \
+      $APTGETOPT_ALT \
+      $apt_unattended_opts \
+      -o Dir::Etc::sourcelist="/tmp/temporary-repository/newer.list" \
+      -o Dir::Etc::sourceparts="-"
+
+apt-get \
+   source \
+      $APTGETOPT_ALT \
+      $apt_unattended_opts \
+      -o Dir::Etc::sourcelist="/tmp/temporary-repository/newer.list" \
+      -o Dir::Etc::sourceparts="-" \
+      $newer_package_list
+
+virtualbox_source_folder="$(realpath virtualbox-*-dfsg)"
+
+/usr/lib/security-misc/apt-get-wrapper \
+   update \
+      $APTGETOPT_ALT \
+      $apt_unattended_opts \
+      -o Dir::Etc::sourcelist="/etc/apt/sources.list" \
+      -o Dir::Etc::sourceparts="-"
+
+pushd "$virtualbox_source_folder"
+
+## XXX: genmkfile should not require this.
+make_use_cowbuilder=false
+GENMKFILE_ROOT_DIR="$virtualbox_source_folder"
+
+## Source make-helper.bsh to get function make_get_variables.
+source /usr/share/genmkfile/make-helper-one.bsh
+
+make_function_run make_init
+make_function_run make_get_variables
+make_function_run make_deinit
+
+## Function make_get_variables sets variable make_deb_build_dependencies.
+true "make_deb_build_dependencies: $make_deb_build_dependencies"
+
+apt-get \
+   install \
+      $APTGETOPT_ALT \
+      $apt_unattended_opts \
+      --yes \
+      -o Dir::Etc::sourcelist="/etc/apt/sources.list" \
+      -o Dir::Etc::sourceparts="-" \
+      $make_deb_build_dependencies
+
+pushd "$virtualbox_source_folder"
+
+dpkg-buildpackage --no-sign
+
+popd
+popd

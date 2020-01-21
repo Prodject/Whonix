@@ -58,10 +58,6 @@
         path = packages/anon-shared-build-apt-sources-tpo
         url = https://github.com/Whonix/anon-shared-build-apt-sources-tpo.git
 
-[submodule "packages/anon-shared-helper-scripts"]
-        path = packages/anon-shared-helper-scripts
-        url = https://github.com/Whonix/anon-shared-helper-scripts.git
-
 [submodule "packages/anon-ws-base-files"]
         path = packages/anon-ws-base-files
         url = https://github.com/Whonix/anon-ws-base-files.git
@@ -81,6 +77,10 @@
 [submodule "packages/apparmor-profile-anondist"]
         path = packages/apparmor-profile-anondist
         url = https://github.com/Whonix/apparmor-profile-anondist.git
+
+[submodule "packages/apparmor-profile-everything"]
+        path = packages/apparmor-profile-everything
+        url = https://github.com/Whonix/apparmor-profile-everything.git
 
 [submodule "packages/apparmor-profile-gwenview"]
         path = packages/apparmor-profile-gwenview
@@ -105,6 +105,10 @@
 [submodule "packages/apparmor-profile-xchat"]
         path = packages/apparmor-profile-xchat
         url = https://github.com/Whonix/apparmor-profile-xchat.git
+
+[submodule "packages/binaries-freedom"]
+        path = packages/binaries-freedom
+        url = https://github.com/Whonix/binaries-freedom.git
 
 [submodule "packages/bindp"]
         path = packages/bindp
@@ -138,9 +142,9 @@
         path = packages/gpl-sources-download
         url = https://github.com/Whonix/gpl-sources-download.git
 
-[submodule "packages/grub-enable-apparmor"]
-        path = packages/grub-enable-apparmor
-        url = https://github.com/Whonix/grub-enable-apparmor.git
+[submodule "packages/grub-default-live"]
+        path = packages/grub-default-live
+        url = https://github.com/Whonix/grub-default-live.git
 
 [submodule "packages/grub-live"]
         path = packages/grub-live
@@ -154,6 +158,18 @@
         path = packages/grub-screen-resolution
         url = https://github.com/Whonix/grub-screen-resolution.git
 
+[submodule "packages/hardened-kernel"]
+        path = packages/hardened-kernel
+        url = https://github.com/Whonix/hardened-kernel.git
+
+[submodule "packages/hardened_malloc"]
+        path = packages/hardened_malloc
+        url = https://github.com/Whonix/hardened_malloc.git
+
+[submodule "packages/helper-scripts"]
+        path = packages/helper-scripts
+        url = https://github.com/Whonix/helper-scripts.git
+
 [submodule "packages/ipv4-forward-disable"]
         path = packages/ipv4-forward-disable
         url = https://github.com/Whonix/ipv4-forward-disable.git
@@ -162,9 +178,21 @@
         path = packages/ipv6-disable
         url = https://github.com/Whonix/ipv6-disable.git
 
+[submodule "packages/kicksecure-base-files"]
+        path = packages/kicksecure-base-files
+        url = https://github.com/Whonix/kicksecure-base-files.git
+
+[submodule "packages/kicksecure-network-conf"]
+        path = packages/kicksecure-network-conf
+        url = https://github.com/Whonix/kicksecure-network-conf.git
+
 [submodule "packages/kloak"]
         path = packages/kloak
         url = https://github.com/Whonix/kloak.git
+
+[submodule "packages/lkrg"]
+        path = packages/lkrg
+        url = https://github.com/Whonix/lkrg.git
 
 [submodule "packages/msgcollector"]
         path = packages/msgcollector
@@ -214,6 +242,10 @@
         path = packages/security-misc
         url = https://github.com/Whonix/security-misc.git
 
+[submodule "packages/serial-console-enable"]
+        path = packages/serial-console-enable
+        url = https://github.com/Whonix/serial-console-enable.git
+
 [submodule "packages/shared-folder-help"]
         path = packages/shared-folder-help
         url = https://github.com/Whonix/shared-folder-help.git
@@ -245,6 +277,10 @@
 [submodule "packages/timezone-utc"]
         path = packages/timezone-utc
         url = https://github.com/Whonix/timezone-utc.git
+
+[submodule "packages/tirdad"]
+        path = packages/tirdad
+        url = https://github.com/Whonix/tirdad.git
 
 [submodule "packages/tor-control-panel"]
         path = packages/tor-control-panel
